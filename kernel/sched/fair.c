@@ -7808,6 +7808,7 @@ static int select_energy_cpu_brute(struct task_struct *p, int prev_cpu,
 	schedstat_inc(this_rq()->eas_stats.secb_attempts);
 
 	rcu_read_lock();
+	boosted = task_is_boosted(p);
 #ifdef CONFIG_CGROUP_SCHEDTUNE
 	prefer_idle = schedtune_prefer_idle(p) > 0;
 #else
@@ -7947,7 +7948,8 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 			bool about_to_idle = (cpu_rq(cpu)->nr_running < 2);
 
 			if (sysctl_sched_sync_hint_enable && sync &&
-			    !_wake_cap && about_to_idle)
+			    !_wake_cap && about_to_idle &&
+			    cpu_is_in_target_set(p, cpu))
 				return cpu;
 		}
 
