@@ -125,6 +125,7 @@ __read_mostly unsigned int sched_ravg_window = MIN_SCHED_RAVG_WINDOW;
 __read_mostly unsigned int walt_cpu_util_freq_divisor;
 
 /* Initial task load. Newly created tasks are assigned this load. */
+unsigned int __read_mostly sched_init_task_load_windows;
 unsigned int __read_mostly sysctl_sched_init_task_load_pct = 15;
 
 /*
@@ -505,15 +506,10 @@ u64 freq_policy_load(struct rq *rq)
 	}
 
 done:
-<<<<<<< HEAD
-	trace_sched_load_to_gov(rq, aggr_grp_load, tt_load, freq_aggr_thresh,
-				load, reporting_policy, walt_rotation_enabled);
-=======
 	trace_sched_load_to_gov(rq, aggr_grp_load, tt_load, sched_freq_aggr_en,
 				load, reporting_policy, walt_rotation_enabled,
 				sysctl_sched_little_cluster_coloc_fmin_khz,
 				coloc_boost_load);
->>>>>>> 935221afb423... sched: Improve the scheduler
 	return load;
 }
 
@@ -1966,8 +1962,8 @@ int sched_set_init_task_load(struct task_struct *p, int init_load_pct)
 void init_new_task_load(struct task_struct *p, bool idle_task)
 {
 	int i;
-	u32 init_load_windows;
-	u32 init_load_pct;
+	u32 init_load_windows = sched_init_task_load_windows;
+	u32 init_load_pct = current->init_load_pct;
 
 	p->init_load_pct = 0;
 	rcu_assign_pointer(p->grp, NULL);
@@ -1981,16 +1977,9 @@ void init_new_task_load(struct task_struct *p, bool idle_task)
 	/* Don't have much choice. CPU frequency would be bogus */
 	BUG_ON(!p->ravg.curr_window_cpu || !p->ravg.prev_window_cpu);
 
-	if (idle_task)
-		return;
-
-	if (current->init_load_pct)
-		init_load_pct = current->init_load_pct;
-	else
-		init_load_pct = sysctl_sched_init_task_load_pct;
-
-	init_load_windows = div64_u64((u64)init_load_pct *
-				(u64)sched_ravg_window, 100);
+	if (init_load_pct)
+		init_load_windows = div64_u64((u64)init_load_pct *
+			  (u64)sched_ravg_window, 100);
 
 	p->ravg.demand = init_load_windows;
 	p->ravg.coloc_demand = init_load_windows;
@@ -3217,15 +3206,28 @@ int walt_proc_update_handler(struct ctl_table *table, int write,
 	return ret;
 }
 
-void walt_sched_init(struct rq *rq)
+static void walt_init_once(void)
 {
-	int j;
-
-	cpumask_set_cpu(cpu_of(rq), &rq->freq_domain_cpumask);
 	init_irq_work(&walt_migration_irq_work, walt_irq_work);
 	init_irq_work(&walt_cpufreq_irq_work, walt_irq_work);
 	walt_rotate_work_init();
 
+	walt_cpu_util_freq_divisor =
+	    (sched_ravg_window >> SCHED_CAPACITY_SHIFT) * 100;
+
+	sched_init_task_load_windows =
+		div64_u64((u64)sysctl_sched_init_task_load_pct *
+			  (u64)sched_ravg_window, 100);
+}
+
+void walt_sched_init_rq(struct rq *rq)
+{
+	int j;
+
+	if (cpu_of(rq) == 0)
+		walt_init_once();
+
+	cpumask_set_cpu(cpu_of(rq), &rq->freq_domain_cpumask);
 	rq->walt_stats.cumulative_runnable_avg = 0;
 	rq->window_start = 0;
 	rq->cum_window_start = 0;
@@ -3271,7 +3273,4 @@ void walt_sched_init(struct rq *rq)
 	}
 	rq->cum_window_demand = 0;
 	rq->notif_pending = false;
-
-	walt_cpu_util_freq_divisor =
-	    (sched_ravg_window >> SCHED_CAPACITY_SHIFT) * 100;
 }
