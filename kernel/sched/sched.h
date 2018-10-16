@@ -3132,12 +3132,20 @@ struct find_first_cpu_bit_env {
 	spinlock_t *rotate_lock;
 };
 
-#ifdef CONFIG_SMP
-#ifdef CONFIG_ENERGY_MODEL
+#if defined(CONFIG_ENERGY_MODEL) && defined(CONFIG_CPU_FREQ_GOV_SCHEDUTIL)
 #define perf_domain_span(pd) (to_cpumask(((pd)->obj->cpus)))
-#else
+
+static inline unsigned long cpu_util_rt(struct rq *rq)
+{
+	return READ_ONCE(rq->avg_rt.util_avg);
+}
+
+#else /* CONFIG_CPU_FREQ_GOV_SCHEDUTIL */
 #define perf_domain_span(pd) NULL
-#endif
+static inline unsigned long schedutil_energy_util(int cpu, unsigned long cfs)
+{
+	return cfs;
+}
 #endif
 
 static inline void sched_irq_work_queue(struct irq_work *work)
@@ -3147,18 +3155,6 @@ static inline void sched_irq_work_queue(struct irq_work *work)
 	else
 		irq_work_queue_on(work, cpumask_any(cpu_online_mask));
 }
-
-static inline unsigned long cpu_util_rt(struct rq *rq)
-{
-	return READ_ONCE(rq->avg_rt.util_avg);
-}
-
-#else /* CONFIG_CPU_FREQ_GOV_SCHEDUTIL */
-static inline unsigned long schedutil_energy_util(int cpu, unsigned long cfs)
-{
-	return cfs;
-}
-#endif
 
 #ifdef HAVE_SCHED_AVG_IRQ
 static inline unsigned long cpu_util_irq(struct rq *rq)
