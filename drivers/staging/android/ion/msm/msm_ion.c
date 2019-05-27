@@ -1216,6 +1216,7 @@ static struct platform_driver msm_ion_driver = {
 	.driver = {
 		.name = "ion-msm",
 		.of_match_table = msm_ion_match_table,
+		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 	},
 };
 
