@@ -27,6 +27,7 @@
 #include <linux/cpu.h>
 #include <linux/pm_opp.h>
 #include <linux/platform_device.h>
+#include <linux/arch_topology.h>
 #include "sched.h"
 
 struct sched_group_energy *sge_array[NR_CPUS][NR_SD_LEVELS];
