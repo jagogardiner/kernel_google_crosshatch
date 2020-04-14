@@ -98,9 +98,6 @@ struct clk_osm {
 	u32 prev_cycle_counter;
 	u32 max_core_count;
 	u32 mx_turbo_freq;
-	ktime_t last_update;
-	struct mutex update_lock;
-	cpumask_t related_cpus;
 };
 
 static bool is_sdm845v1;
@@ -383,7 +380,7 @@ static const struct clk_ops clk_ops_l3_osm = {
 
 static const struct clk_ops clk_ops_pwrcl_core = {
 	.set_rate = clk_pwrcl_set_rate,
-	.round_rate = clk_cpu_round_rate,
+	.determine_rate = clk_cpu_determine_rate,
 	.recalc_rate = clk_cpu_recalc_rate,
 	.debug_init = clk_debug_measure_add,
 };
@@ -682,7 +679,7 @@ static struct clk_osm *osm_configure_policy(struct cpufreq_policy *policy)
 		if (parent != c_parent)
 			continue;
 
-		cpumask_set_cpu(cpu, &c->related_cpus);
+		cpumask_set_cpu(cpu, policy->cpus);
 		if (n->core_num == 0)
 			first = n;
 	}
@@ -743,7 +740,6 @@ static int osm_cpufreq_cpu_init(struct cpufreq_policy *policy)
 	struct em_data_callback em_cb = EM_DATA_CB(of_dev_pm_opp_get_cpu_power);
 	struct clk_osm *c, *parent;
 	struct clk_hw *p_hw;
-	int ret, nr_opp;
 	unsigned int i, prev_cc = 0;
 	unsigned int xo_kHz;
 
@@ -810,25 +806,11 @@ static int osm_cpufreq_cpu_init(struct cpufreq_policy *policy)
 	}
 	table[i].frequency = CPUFREQ_TABLE_END;
 
-	ret = cpufreq_table_validate_and_show(policy, table);
-	if (ret) {
-		pr_err("%s: invalid frequency table: %d\n", __func__, ret);
-		goto err;
-	}
-	nr_opp = ret;
-
-	policy->cpuinfo.transition_latency = MIN_RATE_LIMIT_US;
+	policy->freq_table = table;
 	policy->driver_data = c;
 
-	em_register_perf_domain(policy->cpus, nr_opp, &em_cb);
-
-	cpumask_copy(policy->cpus, &c->related_cpus);
-
+	em_register_perf_domain(policy->cpus, 0, &em_cb);
 	return 0;
-
-err:
-	kfree(table);
-	return ret;
 }
 
 static int osm_cpufreq_cpu_exit(struct cpufreq_policy *policy)
