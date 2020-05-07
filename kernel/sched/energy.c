@@ -25,6 +25,7 @@
 #include <linux/sched_energy.h>
 #include <linux/stddef.h>
 #include <linux/cpu.h>
+#include <linux/cpuset.h>
 #include <linux/pm_opp.h>
 #include <linux/platform_device.h>
 
