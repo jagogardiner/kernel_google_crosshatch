@@ -277,7 +277,7 @@ static int lpm_starting_cpu(unsigned int cpu)
 	struct lpm_cluster *cluster = per_cpu(cpu_lpm, cpu)->parent;
 
 	cluster_unprepare(cluster, get_cpu_mask(cpu), NR_LPM_LEVELS, false,
-						0, true);
+						0);
 	return 0;
 }
 
@@ -573,7 +573,7 @@ static int cpu_power_select(struct cpuidle_device *dev,
 	uint32_t *min_residency = get_per_cpu_min_residency(dev->cpu);
 	uint32_t *max_residency = get_per_cpu_max_residency(dev->cpu);
 
-	if ((sleep_disabled || sleep_disabled_touch) || sleep_us < 0)
+	if (sleep_disabled || sleep_us < 0)
 		return best_level;
 
 	idx_restrict = cpu->nlevels + 1;

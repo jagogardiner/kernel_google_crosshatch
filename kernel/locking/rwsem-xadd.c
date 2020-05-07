@@ -1,3 +1,4 @@
+
 /* rwsem.c: R/W semaphores: contention handling functions
  *
  * Written by David Howells (dhowells@redhat.com).
@@ -249,7 +250,6 @@ struct rw_semaphore __sched *rwsem_down_read_failed(struct rw_semaphore *sem)
 	long count, adjustment = -RWSEM_ACTIVE_READ_BIAS;
 	struct rwsem_waiter waiter;
 	DEFINE_WAKE_Q(wake_q);
-	bool is_first_waiter = false;
 
 	waiter.task = current;
 	waiter.type = RWSEM_WAITING_FOR_READ;

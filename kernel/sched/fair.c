@@ -8062,10 +8062,10 @@ static void update_blocked_averages(int cpu)
 	const struct sched_class *curr_class;
 	struct rq_flags rf;
 	bool done = true;
+        unsigned long thermal_pressure;
 
 	rq_lock_irqsave(rq, &rf);
 	update_rq_clock(rq);
-	unsigned long thermal_pressure;
 
 	/*
 	 * update_cfs_rq_load_avg() can call cpufreq_update_util(). Make sure

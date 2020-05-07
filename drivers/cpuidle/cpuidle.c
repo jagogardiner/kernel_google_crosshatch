@@ -683,9 +683,6 @@ static int cpuidle_latency_notify(struct notifier_block *b,
 	}
 
 	if (!cpumask_empty(&update_mask)) {
-		unsigned long idle_cpus = atomic_read(&idle_cpu_mask);
-		cpumask_and(&update_mask, &update_mask, to_cpumask(&idle_cpus));
-
 		/* Notifier is called with preemption disabled */
 		arch_send_call_function_ipi_mask(&update_mask);
 	}

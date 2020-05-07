@@ -1922,7 +1922,6 @@ asmlinkage int vprintk_emit(int facility, int level,
 		lflags |= LOG_PREFIX|LOG_NEWLINE;
 
 	printed_len += log_output(facility, level, lflags, dict, dictlen, text, text_len);
-	update_msg_ext(logbuf_cpu, current->pid);
 
 	logbuf_unlock_irqrestore(flags);
 

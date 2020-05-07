@@ -49,31 +49,9 @@ out: \
 	return cnt; \
 }
 
-show_table_attr(power);
-show_table_attr(frequency);
-show_table_attr(cost);
-
-static ssize_t show_cpus(struct em_perf_domain *pd, char *buf)
-{
-	return sprintf(buf, "%*pbl\n", cpumask_pr_args(to_cpumask(pd->cpus)));
-}
-
 #define pd_attr(_name) em_pd_##_name##_attr
 #define define_pd_attr(_name) static struct em_pd_attr pd_attr(_name) = \
 		__ATTR(_name, 0444, show_##_name, NULL)
-
-define_pd_attr(power);
-define_pd_attr(frequency);
-define_pd_attr(cost);
-define_pd_attr(cpus);
-
-static struct attribute *em_pd_default_attrs[] = {
-	&pd_attr(power).attr,
-	&pd_attr(frequency).attr,
-	&pd_attr(cost).attr,
-	&pd_attr(cpus).attr,
-	NULL
-};
 
 #define to_pd(k) container_of(k, struct em_perf_domain, kobj)
 #define to_pd_attr(a) container_of(a, struct em_pd_attr, attr)
@@ -91,11 +69,6 @@ static ssize_t show(struct kobject *kobj, struct attribute *attr, char *buf)
 
 static const struct sysfs_ops em_pd_sysfs_ops = {
 	.show	= show,
-};
-
-static struct kobj_type ktype_em_pd = {
-	.sysfs_ops	= &em_pd_sysfs_ops,
-	.default_attrs	= em_pd_default_attrs,
 };
 
 static struct em_perf_domain *em_create_pd(cpumask_t *span, int nr_states,

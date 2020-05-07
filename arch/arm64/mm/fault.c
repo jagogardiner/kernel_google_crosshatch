@@ -30,6 +30,7 @@
 #include <linux/highmem.h>
 #include <linux/perf_event.h>
 #include <linux/preempt.h>
+#include <linux/mm_event.h>
 
 #include <asm/bug.h>
 #include <asm/cpufeature.h>
